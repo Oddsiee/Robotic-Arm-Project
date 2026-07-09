@@ -1,44 +1,44 @@
 # Vision-Guided Robotic Arm
 
-A 4-DOF robotic arm that uses a webcam and OpenCV to find black and white objects on a table, figure out where they are, and pick them up with an Arduino-controlled gripper. Built as a personal engineering project — computer vision on the Python side, kinematics and motor control on the Arduino side.
+Lengan robot 4-DOF yang pakai webcam dan OpenCV buat nemuin objek hitam dan putih di atas meja, nentuin posisinya, terus ngambil objek itu pakai gripper yang dikontrol Arduino. Ini proyek pribadi — sisi computer vision-nya di Python, sisi kinematika dan kontrol motor di Arduino.
 
-I'm documenting the whole build here as I go, milestone by milestone, rather than dumping a finished project at the end. So expect this README (and the code) to keep changing.
+Aku dokumentasiin seluruh proses buildnya di sini sambil jalan, milestone demi milestone, bukan langsung dump proyek yang udah jadi di akhir. Jadi wajar kalau README (dan kodenya) ini masih akan terus berubah.
 
 ---
 
-## What it's supposed to do
+## Yang seharusnya bisa dilakuin
 
-1. Grab frames from a webcam pointed down at the workspace.
-2. Find objects inside a defined region of interest.
-3. Tell black apart from white.
-4. Convert the object's pixel position into real-world coordinates.
-5. Send that over serial to the Arduino.
-6. Run inverse kinematics to get servo angles.
-7. Move the arm, pick the object up, and drop it in the correct zone — black on the left, white on the right.
+1. Ambil frame dari webcam yang diarahin ke bawah, ke area kerja.
+2. Cari objek di dalam region of interest (ROI) yang udah ditentuin.
+3. Bedain warna hitam dan putih.
+4. Konversi posisi pixel objek jadi koordinat dunia nyata.
+5. Kirim koordinat itu lewat serial ke Arduino.
+6. Jalanin inverse kinematics buat dapetin sudut tiap servo.
+7. Gerakin lengan, ambil objeknya, terus taruh di zona yang sesuai — hitam di kiri, putih di kanan.
 
-Nothing fancier than that for now. No color beyond black/white, no stacking, no multiple arms.
+Belum ada yang lebih kompleks dari itu buat sekarang. Belum ada warna selain hitam/putih, belum bisa nyusun objek, belum multi-arm.
 
 ---
 
 ## Hardware
 
 - Arduino Uno
-- 4x SG90 servos (base, shoulder, elbow, gripper)
-- USB webcam, mounted roughly top-down over the workspace
-- 4-DOF arm frame (base→shoulder ~8cm, shoulder→elbow ~6cm, elbow→gripper pivot ~4cm, pivot→tip ~10cm)
+- 4x servo SG90 (base, shoulder, elbow, gripper)
+- Webcam USB, dipasang kurang lebih top-down di atas area kerja
+- Rangka lengan 4-DOF (base→shoulder ±8cm, shoulder→elbow ±6cm, elbow→pivot gripper ±4cm, pivot→ujung capit ±10cm)
 
-**Known issue:** the servos are currently powered straight off the Arduino, which is fine for testing one servo at a time but won't hold up once everything runs together. Needs to move to an external 5V supply with a shared ground before I get to full integration — noted here so I don't forget.
+**Technical debt yang masih ada:** servo-servo saat ini masih dapet daya langsung dari Arduino, yang oke-oke aja kalau testing satu servo, tapi bakal bermasalah begitu semuanya jalan bareng. Perlu dipindah ke power supply eksternal 5V dengan ground yang sama sebelum masuk tahap integrasi penuh — dicatat di sini biar nggak lupa.
 
 ---
 
 ## Software
 
-- Python 3 + OpenCV for the vision side
-- PySerial for talking to the Arduino
-- NumPy for the coordinate math
-- Arduino IDE / Servo library on the microcontroller side
+- Python 3 + OpenCV buat sisi vision
+- PySerial buat komunikasi ke Arduino
+- NumPy buat perhitungan koordinat
+- Arduino IDE / library Servo di sisi mikrokontroler
 
-### Structure
+### Struktur
 
 ```
 RoboticArmProject/
@@ -46,13 +46,13 @@ RoboticArmProject/
 ├── Arduino/
 │
 ├── Python/
-│   ├── camera.py      # webcam, ROI, FPS overlay, display
-│   ├── detection.py    # object detection
-│   ├── color.py         # black/white classification
-│   ├── mapping.py     # pixel → robot coordinates
-│   ├── serial.py         # Python ↔ Arduino
-│   ├── config.py       # all the tunable constants live here
-│   └── main.py           # ties everything together
+│   ├── camera.py      # webcam, ROI, overlay FPS, display
+│   ├── detection.py    # deteksi objek
+│   ├── color.py         # klasifikasi hitam/putih
+│   ├── mapping.py     # pixel → koordinat robot
+│   ├── serial.py         # komunikasi Python ↔ Arduino
+│   ├── config.py       # semua konstanta yang bisa diatur ada di sini
+│   └── main.py           # nyatuin semuanya
 │
 ├── Calibration/
 ├── Documentation/
@@ -60,11 +60,11 @@ RoboticArmProject/
 └── README.md
 ```
 
-Python side is written OOP on purpose — one class per responsibility, `main.py` just orchestrates. All the magic numbers (resolution, ROI bounds, thresholds, etc.) live in `config.py` as a dataclass instead of being scattered across files, which has already saved me from a couple of "wait why did I hardcode that" moments.
+Sisi Python sengaja ditulis pakai OOP — satu class buat satu tanggung jawab, `main.py` cuma jadi orchestrator. Semua angka-angka yang bisa berubah (resolusi, batas ROI, threshold, dll) dipusatkan di `config.py` sebagai dataclass, bukan kesebar di banyak file — ini udah nyelametin aku dari beberapa momen "loh kok ini hardcode ya" pas ngoding.
 
 ---
 
-## Pipeline
+## Alur Sistem
 
 ```
 Camera → Crop ROI → Object Detection → Color Detection
@@ -74,41 +74,41 @@ Camera → Crop ROI → Object Detection → Color Detection
 
 ---
 
-## Where things stand
+## Progres Sekarang
 
-Working through this as a series of milestones, testing each one before moving to the next instead of trying to build the whole thing at once:
+Dikerjain bertahap lewat serangkaian milestone, tiap milestone diuji dulu sebelum lanjut ke berikutnya, daripada langsung bangun semuanya sekaligus:
 
-- [x] Milestone 0 — System planning (workspace layout, coordinate frames, serial protocol, architecture)
-- [x] Milestone 1 — Camera calibration (1280×720, ROI locked in, stable FPS)
-- [x] Milestone 2 — Object detection
-- [ ] Milestone 3 — Color detection *(currently here)*
-- [ ] Milestone 4 — Multi-object detection
-- [ ] Milestone 5 — Object selection (deciding which object to grab when there's more than one)
-- [ ] Milestone 6 — Camera-to-robot coordinate mapping
-- [ ] Milestone 7 — Python ↔ Arduino serial link
-- [ ] Milestone 8 — Servo control
+- [x] Milestone 0 — Perencanaan sistem (layout workspace, sistem koordinat, protokol serial, arsitektur)
+- [x] Milestone 1 — Kalibrasi kamera (1280×720, ROI udah fix, FPS stabil)
+- [ ] Milestone 2 — Deteksi objek *(lagi di sini sekarang)*
+- [ ] Milestone 3 — Deteksi warna
+- [ ] Milestone 4 — Deteksi banyak objek
+- [ ] Milestone 5 — Pemilihan objek (nentuin objek mana yang diproses kalau ada lebih dari satu)
+- [ ] Milestone 6 — Mapping koordinat kamera ke robot
+- [ ] Milestone 7 — Komunikasi serial Python ↔ Arduino
+- [ ] Milestone 8 — Kontrol servo
 - [ ] Milestone 9 — Inverse kinematics
 - [ ] Milestone 10 — Pick and place
-- [ ] Milestone 11 — Full integration
-- [ ] Milestone 12 — Optimization (speed, accuracy, retry logic)
-- [ ] Milestone 13 — Testing under different conditions
-- [ ] Milestone 14 — Final documentation
+- [ ] Milestone 11 — Integrasi penuh
+- [ ] Milestone 12 — Optimisasi (kecepatan, akurasi, retry logic)
+- [ ] Milestone 13 — Pengujian di berbagai kondisi
+- [ ] Milestone 14 — Dokumentasi akhir
 
 ---
 
-## Notes on approach
+## Catatan Pendekatan
 
-Trying to keep this modular enough that each part (camera, detection, mapping, serial, kinematics) can be tested on its own before wiring it all together — mostly so debugging doesn't turn into guessing which of five subsystems is broken. Still very much a work in progress, so some of the folders above are placeholders for now.
+Diusahain tiap bagian (kamera, deteksi, mapping, serial, kinematika) bisa diuji sendiri-sendiri dulu sebelum digabung semua — biar kalau ada yang error, debugging-nya nggak jadi nebak-nebak dari lima subsistem yang mana. Masih jauh dari selesai, jadi beberapa folder di atas masih placeholder.
 
 ---
 
-## License
+## Lisensi
 
-Built for educational purposes.
+Dibuat untuk keperluan edukasi.
 
 ---
 
 ## Author
 
 **Dumadio Digdaya**
-Electrical Engineering, Diponegoro University, Indonesia
+Teknik Elektro, Universitas Diponegoro, Indonesia
