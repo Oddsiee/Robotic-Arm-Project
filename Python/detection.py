@@ -102,3 +102,5 @@ class Detection:
         cv2.drawContours(roi_drawn, contours, -1, (255, 0, 255), 2)
 
         return roi_drawn
+    
+print("test")
