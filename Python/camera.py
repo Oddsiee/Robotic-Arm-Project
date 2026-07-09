@@ -1,31 +1,24 @@
 import cv2
 import time
 
+from config import CameraConfig, ROIConfig, WindowConfig
+
 
 class Camera:
-    def __init__(
-        self,
-        camera_index=1,
-        width=1280,
-        height=720,
-        window_name="Robotic Arm Camera",
-        roi_x=250,
-        roi_y=100,
-        roi_width=800,
-        roi_height=500
-    ):
 
-        # Camera
-        self.camera_index = camera_index
-        self.width = width
-        self.height = height
-        self.window_name = window_name
+    def __init__(self):
 
-        # ROI
-        self.roi_x = roi_x
-        self.roi_y = roi_y
-        self.roi_width = roi_width
-        self.roi_height = roi_height
+        # Camera configuration
+        self.camera_index = CameraConfig.INDEX
+        self.width = CameraConfig.WIDTH
+        self.height = CameraConfig.HEIGHT
+        self.window_name = WindowConfig.CAMERA_WINDOW
+
+        # ROI configuration
+        self.roi_x = ROIConfig.X
+        self.roi_y = ROIConfig.Y
+        self.roi_width = ROIConfig.WIDTH
+        self.roi_height = ROIConfig.HEIGHT
 
         # Camera object
         self.cap = None
@@ -45,6 +38,7 @@ class Camera:
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
 
+        # Membaca resolusi aktual kamera
         self.width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
@@ -52,6 +46,7 @@ class Camera:
         print("Robotic Arm Camera")
         print("=" * 40)
         print(f"Resolution : {self.width} x {self.height}")
+        print(f"Target FPS : {CameraConfig.FPS}")
         print("Press 'q' to quit")
         print("=" * 40)
 
@@ -139,7 +134,7 @@ class Camera:
 
     def show_roi(self, roi):
 
-        cv2.imshow("ROI", roi)
+        cv2.imshow(WindowConfig.ROI_WINDOW, roi)
 
     def is_quit(self):
 
