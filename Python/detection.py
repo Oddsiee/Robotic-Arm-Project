@@ -72,9 +72,43 @@ class Detection:
             if cv2.contourArea(c) >= DetectionConfig.MIN_CONTOUR_AREA
         ]
 
-        object_found = len(valid_contours) > 0
+        objects = self.get_objects(valid_contours)
 
-        return object_found, valid_contours, mask
+        object_found = len(objects) > 0
+
+        return object_found, objects, mask
+
+    def _compute_centroid(self, contour):
+
+        # Titik tengah objek sebenarnya (bukan titik tengah bounding rect)
+        M = cv2.moments(contour)
+
+        if M["m00"] == 0:
+            x, y, w, h = cv2.boundingRect(contour)
+            return x + w // 2, y + h // 2
+
+        cx = int(M["m10"] / M["m00"])
+        cy = int(M["m01"] / M["m00"])
+
+        return cx, cy
+
+    def get_objects(self, contours):
+
+        objects = []
+
+        for c in contours:
+
+            cx, cy = self._compute_centroid(c)
+
+            _, _, w, h = cv2.boundingRect(c)
+
+            objects.append({
+                "centroid": (cx, cy),
+                "width": w,
+                "height": h,
+            })
+
+        return objects
 
     def draw_status(self, frame, object_found):
 
@@ -95,10 +129,24 @@ class Detection:
 
         return frame
 
-    def draw_contours(self, roi, contours):
+    def draw_objects(self, roi, objects):
 
         roi_drawn = roi.copy()
 
-        cv2.drawContours(roi_drawn, contours, -1, (255, 0, 255), 2)
+        for obj in objects:
+
+            cx, cy = obj["centroid"]
+            w, h = obj["width"], obj["height"]
+
+            x1 = cx - w // 2
+            y1 = cy - h // 2
+            x2 = cx + w // 2
+            y2 = cy + h // 2
+
+            # Kotak imajiner, ukuran ikut objek, posisi ikut centroid
+            cv2.rectangle(roi_drawn, (x1, y1), (x2, y2), (255, 0, 255), 2)
+
+            # Titik tengah objek
+            cv2.circle(roi_drawn, (cx, cy), 4, (0, 255, 255), -1)
 
         return roi_drawn

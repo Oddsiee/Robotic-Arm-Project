@@ -54,7 +54,7 @@ class DetectionConfig:
     MORPH_ITERATIONS: int = 2
 
     # Contour filtering
-    MIN_CONTOUR_AREA: int = 500
+    MIN_CONTOUR_AREA: int = 50
 
     # Keyboard shortcut untuk menangkap reference frame
     CAPTURE_REF_KEY: str = "r"

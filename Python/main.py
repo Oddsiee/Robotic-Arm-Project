@@ -27,13 +27,13 @@ def main():
             camera.update_fps()
 
             object_found = False
-            contours = []
+            objects = []
             mask = None
 
             if detection.has_reference():
-                object_found, contours, mask = detection.detect(roi)
+                object_found, objects, mask = detection.detect(roi)
 
-            roi_display = detection.draw_contours(roi, contours) if contours else roi
+            roi_display = detection.draw_objects(roi, objects) if objects else roi
 
             frame = camera.draw_info(frame)
             frame = camera.draw_roi(frame)
