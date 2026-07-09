@@ -86,7 +86,7 @@ class Camera:
             f"FPS : {self.fps:.1f}",
             (20, 35),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
+            0.6,
             (0, 255, 0),
             2
         )
@@ -96,7 +96,7 @@ class Camera:
             f"Resolution : {self.width} x {self.height}",
             (20, 70),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
+            0.6,
             (0, 255, 0),
             2
         )
@@ -121,7 +121,7 @@ class Camera:
             "ROI",
             (self.roi_x, self.roi_y - 10),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
+            0.6,
             (0, 255, 255),
             2
         )

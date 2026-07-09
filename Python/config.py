@@ -44,10 +44,10 @@ class ROIConfig:
 class DetectionConfig:
 
     # Preprocessing (Gaussian blur, harus ganjil)
-    BLUR_KERNEL: int = 5
+    BLUR_KERNEL: int = 11
 
     # Background subtraction
-    DIFF_THRESHOLD: int = 25
+    DIFF_THRESHOLD: int = 23
 
     # Morphology
     MORPH_KERNEL: int = 5

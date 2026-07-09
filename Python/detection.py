@@ -90,7 +90,7 @@ class Detection:
 
         cv2.putText(
             frame, text, (20, 105),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2
+            cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2
         )
 
         return frame
@@ -102,5 +102,3 @@ class Detection:
         cv2.drawContours(roi_drawn, contours, -1, (255, 0, 255), 2)
 
         return roi_drawn
-    
-print("test")
