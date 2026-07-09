@@ -1,6 +1,6 @@
 # Vision-Guided Robotic Arm
 
-Lengan robot 4-DOF yang pakai webcam dan OpenCV buat nemuin objek hitam dan putih di atas meja, nentuin posisinya, terus ngambil objek itu pakai gripper yang dikontrol Arduino. Ini proyek pribadi — sisi computer vision-nya di Python, sisi kinematika dan kontrol motor di Arduino.
+Lengan robot 4-DOF yang pakai webcam dan OpenCV buat nemuin objek hitam dan putih di atas meja, nentuin posisinya, terus ngambil objek itu pakai gripper yang dikontrol Arduino. Ini proyek pribadi, sisi computer vision-nya di Python, sisi kinematika dan kontrol motor di Arduino.
 
 Aku dokumentasiin seluruh proses buildnya di sini sambil jalan, milestone demi milestone, bukan langsung dump proyek yang udah jadi di akhir. Jadi wajar kalau README (dan kodenya) ini masih akan terus berubah.
 
@@ -80,8 +80,8 @@ Dikerjain bertahap lewat serangkaian milestone, tiap milestone diuji dulu sebelu
 
 - [x] Milestone 0 — Perencanaan sistem (layout workspace, sistem koordinat, protokol serial, arsitektur)
 - [x] Milestone 1 — Kalibrasi kamera (1280×720, ROI udah fix, FPS stabil)
-- [ ] Milestone 2 — Deteksi objek *(lagi di sini sekarang)*
-- [ ] Milestone 3 — Deteksi warna
+- [x] Milestone 2 — Deteksi objek
+- [ ] Milestone 3 — Deteksi warna *(lagi di sini sekarang)*
 - [ ] Milestone 4 — Deteksi banyak objek
 - [ ] Milestone 5 — Pemilihan objek (nentuin objek mana yang diproses kalau ada lebih dari satu)
 - [ ] Milestone 6 — Mapping koordinat kamera ke robot
@@ -98,7 +98,7 @@ Dikerjain bertahap lewat serangkaian milestone, tiap milestone diuji dulu sebelu
 
 ## Catatan Pendekatan
 
-Diusahain tiap bagian (kamera, deteksi, mapping, serial, kinematika) bisa diuji sendiri-sendiri dulu sebelum digabung semua — biar kalau ada yang error, debugging-nya nggak jadi nebak-nebak dari lima subsistem yang mana. Masih jauh dari selesai, jadi beberapa folder di atas masih placeholder.
+Diusahain tiap bagian (kamera, deteksi, mapping, serial, kinematika) bisa diuji sendiri-sendiri dulu sebelum digabung semua, biar kalau ada yang error, debugging-nya nggak jadi nebak-nebak dari lima subsistem yang mana. Masih jauh dari selesai, jadi beberapa folder di atas masih placeholder.
 
 ---
 
