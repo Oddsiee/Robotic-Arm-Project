@@ -136,6 +136,10 @@ class Camera:
 
         cv2.imshow(WindowConfig.ROI_WINDOW, roi)
 
+    def get_key(self):
+
+        return cv2.waitKey(1) & 0xFF
+
     def is_quit(self):
 
         return cv2.waitKey(1) & 0xFF == ord('q')

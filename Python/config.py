@@ -21,6 +21,7 @@ class CameraConfig:
 class WindowConfig:
     CAMERA_WINDOW: str = "Robotic Arm Camera"
     ROI_WINDOW: str = "ROI"
+    MASK_WINDOW: str = "Mask"
 
 
 # ==========================================================
@@ -33,6 +34,30 @@ class ROIConfig:
     Y: int = 100
     WIDTH: int = 800
     HEIGHT: int = 500
+
+
+# ==========================================================
+# Object Detection (Milestone 2)
+# ==========================================================
+
+@dataclass(frozen=True)
+class DetectionConfig:
+
+    # Preprocessing (Gaussian blur, harus ganjil)
+    BLUR_KERNEL: int = 5
+
+    # Background subtraction
+    DIFF_THRESHOLD: int = 25
+
+    # Morphology
+    MORPH_KERNEL: int = 5
+    MORPH_ITERATIONS: int = 2
+
+    # Contour filtering
+    MIN_CONTOUR_AREA: int = 500
+
+    # Keyboard shortcut untuk menangkap reference frame
+    CAPTURE_REF_KEY: str = "r"
 
 
 # ==========================================================
