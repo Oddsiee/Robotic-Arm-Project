@@ -82,8 +82,8 @@ Dikerjain bertahap lewat serangkaian milestone, tiap milestone diuji dulu sebelu
 - [x] Milestone 1 — Kalibrasi kamera (1280×720, ROI udah fix, FPS stabil)
 - [x] Milestone 2 — Deteksi objek
 - [x] Milestone 3 — Deteksi warna
-- [ ] Milestone 4 — Deteksi banyak objek *(lagi di sini sekarang)*
-- [ ] Milestone 5 — Pemilihan objek (nentuin objek mana yang diproses kalau ada lebih dari satu)
+- [x] Milestone 4 — Deteksi banyak objek 
+- [ ] Milestone 5 — Pemilihan objek (nentuin objek mana yang diproses kalau ada lebih dari satu) *(lagi di sini sekarang)*
 - [ ] Milestone 6 — Mapping koordinat kamera ke robot
 - [ ] Milestone 7 — Komunikasi serial Python ↔ Arduino
 - [ ] Milestone 8 — Kontrol servo
