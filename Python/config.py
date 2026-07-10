@@ -44,17 +44,17 @@ class ROIConfig:
 class DetectionConfig:
 
     # Preprocessing (Gaussian blur, harus ganjil)
-    BLUR_KERNEL: int = 11
+    BLUR_KERNEL: int = 15
 
     # Background subtraction
     DIFF_THRESHOLD: int = 23
 
     # Morphology
-    MORPH_KERNEL: int = 5
+    MORPH_KERNEL: int = 7
     MORPH_ITERATIONS: int = 2
 
     # Contour filtering
-    MIN_CONTOUR_AREA: int = 50
+    MIN_CONTOUR_AREA: int = 500
 
     # Keyboard shortcut untuk menangkap reference frame
     CAPTURE_REF_KEY: str = "r"

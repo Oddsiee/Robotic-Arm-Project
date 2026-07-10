@@ -30,9 +30,20 @@ class Detection:
         return blurred
 
     def detect(self, roi):
+        """
+        Mendeteksi seluruh objek valid pada ROI.
+
+        Return:
+            objects (list[dict]): setiap objek berisi
+                - id       : nomor urut (kiri -> kanan)
+                - centroid : (cx, cy)
+                - contour  : contour asli
+                - area     : luas contour
+            mask (ndarray | None)
+        """
 
         if self.reference_frame is None:
-            return False, [], None
+            return [], None
 
         current = self._preprocess(roi)
 
@@ -72,51 +83,63 @@ class Detection:
             if cv2.contourArea(c) >= DetectionConfig.MIN_CONTOUR_AREA
         ]
 
-        objects = self.get_objects(valid_contours)
+        objects = self._build_objects(valid_contours)
 
-        object_found = len(objects) > 0
+        return objects, mask
 
-        return object_found, objects, mask
+    def _build_objects(self, contours):
+        """
+        Menghitung centroid tiap contour valid (Decision #013),
+        lalu mengurutkan objek dari kiri ke kanan berdasarkan
+        koordinat x centroid (Decision #012) supaya penomoran
+        konsisten antar frame.
+        """
 
-    def _compute_centroid(self, contour):
-
-        # Titik tengah objek sebenarnya (bukan titik tengah bounding rect)
-        M = cv2.moments(contour)
-
-        if M["m00"] == 0:
-            x, y, w, h = cv2.boundingRect(contour)
-            return x + w // 2, y + h // 2
-
-        cx = int(M["m10"] / M["m00"])
-        cy = int(M["m01"] / M["m00"])
-
-        return cx, cy
-
-    def get_objects(self, contours):
-
-        objects = []
+        raw = []
 
         for c in contours:
 
-            cx, cy = self._compute_centroid(c)
+            M = cv2.moments(c)
 
-            _, _, w, h = cv2.boundingRect(c)
+            if M["m00"] == 0:
+                continue
 
-            objects.append({
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+
+            # Bounding box: kotak pembungkus objek. Semua pixel yang
+            # ada di dalam kotak ini dianggap milik objek yang sama.
+            x, y, w, h = cv2.boundingRect(c)
+
+            raw.append({
                 "centroid": (cx, cy),
-                "width": w,
-                "height": h,
+                "bbox": (x, y, w, h),
+                "contour": c,
+                "area": cv2.contourArea(c)
+            })
+
+        raw.sort(key=lambda obj: obj["centroid"][0])
+
+        objects = []
+
+        for i, obj in enumerate(raw, start=1):
+            objects.append({
+                "id": i,
+                "centroid": obj["centroid"],
+                "bbox": obj["bbox"],
+                "contour": obj["contour"],
+                "area": obj["area"]
             })
 
         return objects
 
-    def draw_status(self, frame, object_found):
+    def draw_status(self, frame, objects):
 
         if not self.has_reference():
             text = f"Press '{DetectionConfig.CAPTURE_REF_KEY}' to set reference"
             color = (0, 255, 255)
-        elif object_found:
-            text = "Object Found"
+        elif len(objects) > 0:
+            text = f"Objects Found: {len(objects)}"
             color = (0, 255, 0)
         else:
             text = "No Object"
@@ -130,23 +153,35 @@ class Detection:
         return frame
 
     def draw_objects(self, roi, objects):
+        """
+        Menggambar bounding box tiap objek, titik centroid di
+        tengahnya, dan label nomor + koordinat (format: #id (x,y)).
+
+        Bounding box = kotak pembungkus objek (dari cv2.boundingRect).
+        Semua pixel di dalam kotak ini dianggap milik objek tersebut.
+        """
 
         roi_drawn = roi.copy()
 
         for obj in objects:
 
+            x, y, w, h = obj["bbox"]
             cx, cy = obj["centroid"]
-            w, h = obj["width"], obj["height"]
 
-            x1 = cx - w // 2
-            y1 = cy - h // 2
-            x2 = cx + w // 2
-            y2 = cy + h // 2
+            # Kotak pembungkus objek
+            cv2.rectangle(
+                roi_drawn, (x, y), (x + w, y + h),
+                (255, 0, 255), 2
+            )
 
-            # Kotak imajiner, ukuran ikut objek, posisi ikut centroid
-            cv2.rectangle(roi_drawn, (x1, y1), (x2, y2), (255, 0, 255), 2)
+            # Titik tengah (centroid) objek
+            cv2.circle(roi_drawn, (cx, cy), 4, (0, 255, 0), -1)
 
-            # Titik tengah objek
-            cv2.circle(roi_drawn, (cx, cy), 4, (0, 255, 255), -1)
+            label = f"#{obj['id']} ({cx},{cy})"
+
+            cv2.putText(
+                roi_drawn, label, (x, y - 8),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2
+            )
 
         return roi_drawn
