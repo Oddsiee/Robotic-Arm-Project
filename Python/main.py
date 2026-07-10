@@ -2,6 +2,8 @@ import cv2
 
 from camera import Camera
 from detection import Detection
+from color import Color
+from selection import Selection
 from config import DetectionConfig, WindowConfig
 
 
@@ -9,13 +11,15 @@ def main():
 
     camera = Camera()
     detection = Detection()
+    color = Color()
+    selection = Selection(color)
 
     try:
 
         camera.open()
 
         print(f"Tekan '{DetectionConfig.CAPTURE_REF_KEY}' saat ROI kosong untuk menangkap reference frame.")
-        print("Tekan 'p' untuk print daftar objek (id + koordinat) ke console.")
+        print("Tekan 'p' untuk print objek terpilih ke console.")
 
         while True:
 
@@ -29,11 +33,16 @@ def main():
 
             objects = []
             mask = None
+            selected = None
 
             if detection.has_reference():
                 objects, mask = detection.detect(roi)
 
+            if objects:
+                selected = selection.select(roi, objects)
+
             roi_display = detection.draw_objects(roi, objects) if objects else roi
+            roi_display = selection.draw_selected(roi_display, selected)
 
             frame = camera.draw_info(frame)
             frame = camera.draw_roi(frame)
@@ -55,10 +64,11 @@ def main():
                 print("Reference frame captured.")
 
             if key == ord('p'):
-                if objects:
-                    for obj in objects:
-                        cx, cy = obj["centroid"]
-                        print(f"Object {obj['id']} ({cx},{cy})")
+                if selected:
+                    cx, cy = selected["centroid"]
+                    print(f"Selected: #{selected['id']} {selected['color']} ({cx},{cy})")
+                elif objects:
+                    print("Objects detected, but none with valid color (all UNKNOWN).")
                 else:
                     print("No Object")
 
