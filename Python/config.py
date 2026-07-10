@@ -30,9 +30,9 @@ class WindowConfig:
 
 @dataclass(frozen=True)
 class ROIConfig:
-    X: int = 250
-    Y: int = 100
-    WIDTH: int = 800
+    X: int = 180
+    Y: int = 110
+    WIDTH: int = 900
     HEIGHT: int = 500
 
 
@@ -44,7 +44,7 @@ class ROIConfig:
 class DetectionConfig:
 
     # Preprocessing (Gaussian blur, harus ganjil)
-    BLUR_KERNEL: int = 15
+    BLUR_KERNEL: int = 17
 
     # Background subtraction
     DIFF_THRESHOLD: int = 23
