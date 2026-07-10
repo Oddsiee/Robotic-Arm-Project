@@ -67,12 +67,11 @@ class DetectionConfig:
 @dataclass(frozen=True)
 class HSVConfig:
 
-    # Placeholder
-    BLACK_LOWER: tuple = (0, 0, 0)
-    BLACK_UPPER: tuple = (180, 255, 60)
+    BLACK_LOWER: tuple = (0, 65, 0)
+    BLACK_UPPER: tuple = (180, 255, 101)
 
-    WHITE_LOWER: tuple = (0, 0, 180)
-    WHITE_UPPER: tuple = (180, 50, 255)
+    WHITE_LOWER: tuple = (36, 0, 141)
+    WHITE_UPPER: tuple = (180, 255, 255)
 
 
 # ==========================================================

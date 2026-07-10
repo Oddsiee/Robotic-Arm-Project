@@ -2,6 +2,7 @@ import cv2
 
 from camera import Camera
 from detection import Detection
+from color import Color
 from config import DetectionConfig, WindowConfig
 
 
@@ -9,6 +10,7 @@ def main():
 
     camera = Camera()
     detection = Detection()
+    color = Color()
 
     try:
 
@@ -27,13 +29,20 @@ def main():
             camera.update_fps()
 
             object_found = False
-            objects = []
+            contours = []
             mask = None
 
             if detection.has_reference():
-                object_found, objects, mask = detection.detect(roi)
+                object_found, contours, mask = detection.detect(roi)
 
-            roi_display = detection.draw_objects(roi, objects) if objects else roi
+            roi_display = roi.copy()
+
+            if contours:
+                roi_display = detection.draw_contours(roi_display, contours)
+
+                for contour in contours:
+                    label = color.classify(roi, contour)
+                    roi_display = color.draw_label(roi_display, contour, label)
 
             frame = camera.draw_info(frame)
             frame = camera.draw_roi(frame)
