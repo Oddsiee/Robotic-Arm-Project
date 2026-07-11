@@ -147,7 +147,7 @@ class Detection:
 
         cv2.putText(
             frame, text, (20, 105),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2
+            cv2.FONT_HERSHEY_SIMPLEX, 0.3, color, 2
         )
 
         return frame

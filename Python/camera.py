@@ -91,16 +91,6 @@ class Camera:
             2
         )
 
-        cv2.putText(
-            frame,
-            f"Resolution : {self.width} x {self.height}",
-            (20, 70),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (0, 255, 0),
-            2
-        )
-
         return frame
 
     def draw_roi(self, frame):

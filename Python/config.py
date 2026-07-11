@@ -30,10 +30,12 @@ class WindowConfig:
 
 @dataclass(frozen=True)
 class ROIConfig:
-    X: int = 180
-    Y: int = 110
-    WIDTH: int = 900
-    HEIGHT: int = 500
+    #Naik untuk ke kanan, turun untuk ke kiri
+    X: int = 200
+    #Naik untuk turun, turun untuk naik
+    Y: int = 45
+    WIDTH: int = 780
+    HEIGHT: int = 366
 
 
 # ==========================================================
@@ -44,13 +46,13 @@ class ROIConfig:
 class DetectionConfig:
 
     # Preprocessing (Gaussian blur, harus ganjil)
-    BLUR_KERNEL: int = 17
+    BLUR_KERNEL: int = 19
 
     # Background subtraction
-    DIFF_THRESHOLD: int = 23
+    DIFF_THRESHOLD: int = 16
 
     # Morphology
-    MORPH_KERNEL: int = 7
+    MORPH_KERNEL: int = 8
     MORPH_ITERATIONS: int = 2
 
     # Contour filtering
@@ -67,11 +69,11 @@ class DetectionConfig:
 @dataclass(frozen=True)
 class HSVConfig:
 
-    BLACK_LOWER: tuple = (0, 65, 0)
-    BLACK_UPPER: tuple = (180, 255, 101)
+    BLACK_LOWER: tuple = (16, 23, 0)
+    BLACK_UPPER: tuple = (180, 255, 85)
 
-    WHITE_LOWER: tuple = (36, 0, 141)
-    WHITE_UPPER: tuple = (180, 255, 255)
+    WHITE_LOWER: tuple = (0, 19, 149)
+    WHITE_UPPER: tuple = (119, 255, 255)
 
 
 # ==========================================================
@@ -93,8 +95,13 @@ class SerialConfig:
 @dataclass(frozen=True)
 class MappingConfig:
 
-    PIXEL_TO_CM_X: float = 1.0
-    PIXEL_TO_CM_Y: float = 1.0
+    # Matriks homography 3x3 (row-major, 9 elemen), hasil kalibrasi
+    # via cv2.getPerspectiveTransform. Default identity = placeholder.
+    HOMOGRAPHY_MATRIX: tuple = ( 
+        -0.008550255654884004, 0.004906254139413923, 4.555445386498193,
+        -0.017464071369826202, -0.006900203197459619, 14.448876209971186,
+        -0.001130122111242908, -0.0006667793878077274, 1.0,
+    )
 
 
 # ==========================================================
