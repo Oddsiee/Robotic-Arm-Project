@@ -24,9 +24,7 @@
 ### Decision #035
 Base servo (continuous rotation) dikontrol lewat **time-based rotation**: fungsi `baseRotate(direction, duration_ms)` — set pulse arah, tunggu durasi tertentu, lalu kembali ke pulse stop.
 
-**Alasan**
-- Base tidak punya sudut absolut secara fisik (Decision #029, Milestone 7), sehingga tidak bisa dikontrol dengan `write(angle)` seperti servo positional.
-- Time-based rotation adalah strategi paling sederhana yang tidak butuh sensor tambahan (encoder/limit switch) — cukup untuk kebutuhan Milestone 8. Kalau ke depannya presisi time-based ini terbukti tidak cukup konsisten (mis. drift baterai/beban), opsi encoder/limit switch bisa dipertimbangkan ulang di Milestone 9.
+> **⚠️ Superseded oleh Decision #041.** Lihat bagian "Revisi Pasca-Milestone 8".
 
 ### Decision #036
 Sketch `Arduino/ServoControl/ServoControl.ino` berupa **sweep test otomatis** (one-shot, dijalankan sekali di `setup()`), bukan kontrol interaktif keypress.
@@ -38,24 +36,51 @@ Sketch `Arduino/ServoControl/ServoControl.ino` berupa **sweep test otomatis** (o
 ### Decision #037
 Base servo ditangani lewat fungsi terpisah (`baseRotate()`), tidak dipaksa masuk ke helper yang sama dengan 3 servo positional (`moveServoSmooth()`).
 
-**Alasan**
-- Interface base (arah + durasi) fundamental beda dari interface servo positional (target angle) — memaksakan satu abstraksi seragam untuk 4 servo (1 di antaranya beda jenis) hanya menambah kompleksitas tanpa benefit nyata di skala proyek ini.
+> **⚠️ Superseded oleh Decision #041.** Lihat bagian "Revisi Pasca-Milestone 8".
 
 ### Decision #038
 Pin servo final: `PIN_BASE=8`, `PIN_SHOULDER=9`, `PIN_ELBOW=10`, `PIN_GRIPPER=11` — direvisi dari placeholder awal (9/10/11/6) sesuai wiring aktual yang dipakai operator.
 
+*(Masih berlaku, tidak terdampak revisi hardware base.)*
+
 ### Decision #039
 Kalibrasi durasi rotasi base dicatat sebagai referensi: **0°→180° (CW) ≈ 1650ms**, **180°→0° (CCW) ≈ 1165ms**. Asimetri ini diterima sebagai karakteristik fisik servo continuous itu sendiri (bukan bug di kode), tidak dipaksa disamakan.
 
-**Alasan**
-- Nilai ini akan jadi titik awal untuk menghitung estimasi durasi-per-derajat base di Milestone 9 (Inverse Kinematics), yang sebelumnya dicatat sebagai catatan terbuka di Milestone 7 (Decision #029) — base butuh "strategi tambahan" karena tidak bisa langsung `write(angle)`.
-- Asimetri arah tidak dipaksakan simetris (mis. dengan trim ulang `BASE_CW_PULSE`/`BASE_CCW_PULSE`) karena servo continuous murah memang lazim punya karakteristik begini; lebih aman dikompensasi secara software (durasi berbeda per arah) daripada dipaksa lewat tuning pulsa yang belum tentu stabil di semua kondisi.
+> **⚠️ Superseded oleh Decision #041.** Nilai ini tidak lagi relevan karena base bukan lagi continuous rotation. Dipertahankan di sini sebagai catatan historis.
 
 ### Decision #040
-Label `BASE_CW`/`BASE_CCW` di kode diperlakukan sebagai **label internal arbitrer**, bukan representasi harfiah arah searah/berlawanan jarum jam secara visual. Urutan eksekusi sweep test (CW dulu, lalu CCW) yang secara fisik menghasilkan CCW dulu baru CW, dibiarkan apa adanya karena dikonfirmasi operator sudah sesuai urutan gerak yang diinginkan.
+Label `BASE_CW`/`BASE_CCW` di kode diperlakukan sebagai **label internal arbitrer**, bukan representasi harfiah arah searah/berlawanan jarum jam secara visual.
+
+> **⚠️ Superseded oleh Decision #041.** Base servo baru tidak lagi punya konsep arah CW/CCW kontinu — dikontrol lewat target angle seperti servo positional lainnya.
+
+---
+
+## Revisi Pasca-Milestone 8
+
+### Decision #041 — Base servo diganti dari SG90 360° continuous rotation menjadi SG90 180° positional
+
+Base servo secara fisik diganti dari SG90 360° (continuous rotation) menjadi SG90 180° (positional), menyusul rekomendasi sebelum masuk Milestone 9.
+
+**Perubahan kode:**
+- `Arduino/ServoControl/ServoControl.ino` direvisi: `baseRotate()`, `BaseDirection` enum, dan tiga pulsa kalibrasi (`BASE_STOP_PULSE`, `BASE_CW_PULSE`, `BASE_CCW_PULSE`) **dihapus total**.
+- Base sekarang dikontrol lewat `moveServoSmooth()` yang sama persis dengan shoulder/elbow/gripper — target angle, bukan arah + durasi.
+- Ditambahkan `BASE_HOME = 90`, ditulis di `setup()` bersamaan dengan servo positional lain.
+- Sweep test base diperbarui: `0 → 180 → home`, konsisten dengan pola sweep shoulder/elbow.
 
 **Alasan**
-- Yang penting adalah konsistensi pemakaian (`BASE_CW_PULSE` selalu dipakai buat "arah A", `BASE_CCW_PULSE` buat "arah B") dan operator sudah tahu persis pulsa mana yang menghasilkan gerak fisik ke arah mana — nama variabel tidak perlu match literal ke arah jarum jam visual selama tidak menyebabkan salah pakai di kode lain.
+- Milestone 0 sejak awal sudah membatasi workspace base hanya **0°–180°** (area belakang robot = forbidden workspace) — kebutuhan rotasi penuh 360° sebenarnya tidak pernah ada, sehingga servo 180° positional sudah cukup untuk seluruh rentang gerak yang dibutuhkan.
+- Menghapus kebutuhan strategi durasi-per-derajat untuk base yang sebelumnya jadi catatan terbuka sejak Decision #029 (Milestone 7) — output sudut dari Inverse Kinematics (Milestone 9) sekarang bisa langsung di-`write()` ke base, sama seperti shoulder/elbow, tanpa estimasi waktu.
+- Menghilangkan ketidakpastian akibat asimetri durasi CW/CCW (Decision #039) yang bergantung pada tegangan, beban, dan keausan motor — servo positional punya feedback posisi internal (potensiometer) sehingga tidak butuh estimasi berbasis waktu sama sekali.
+- Menyeragamkan kontrol seluruh 4 servo lewat satu helper (`moveServoSmooth()`), mengurangi permukaan kode dan sumber bug.
+
+**Dampak ke Decision sebelumnya**
+- **Decision #029** (Milestone 7, base = continuous rotation): superseded — base sekarang SG90 180° positional, sama seperti shoulder/elbow/gripper.
+- **Decision #035, #037** (Milestone 8, `baseRotate()` + helper terpisah): superseded — base memakai `moveServoSmooth()` yang sama dengan servo positional lain.
+- **Decision #039** (Milestone 8, kalibrasi durasi CW/CCW): superseded — nilai durasi tidak lagi relevan, dipertahankan sebagai catatan historis saja.
+- **Decision #040** (Milestone 8, label CW/CCW arbitrer): superseded — konsep arah CW/CCW kontinu tidak lagi berlaku untuk base.
+
+**Dampak ke Milestone 9 (Inverse Kinematics)**
+- Base tidak lagi butuh "strategi tambahan" untuk menerjemahkan output IK ke gerakan servo (catatan terbuka sejak Decision #029). Model IK cylindrical (base azimuth + shoulder/elbow sebagai 2-link planar chain) yang sudah didesain **tidak perlu diubah** — hanya cara mengeksekusi sudut base ke hardware yang jadi lebih sederhana (`write(angle)` langsung, bukan estimasi durasi).
 
 ---
 
@@ -69,8 +94,8 @@ Label `BASE_CW`/`BASE_CCW` di kode diperlakukan sebagai **label internal arbitre
 - ✅ Milestone 5 — Pemilihan Objek
 - ✅ Milestone 6 — Camera to Robot Mapping
 - ✅ Milestone 7 — Python ↔ Arduino Serial
-- ✅ Milestone 8 — Kontrol Servo
-- ⏳ Milestone 9 — Inverse Kinematics
+- ✅ Milestone 8 — Kontrol Servo *(direvisi: base diganti ke SG90 180° positional)*
+- ⏳ Milestone 9 — Inverse Kinematics *(lagi di sini sekarang)*
 - ⏳ Milestone 10 — Pick and Place
 - ⏳ Milestone 11 — Integrasi Vision + Robot
 - ⏳ Milestone 12 — Optimisasi

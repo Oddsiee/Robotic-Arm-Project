@@ -1,21 +1,20 @@
 // Arduino/ServoControl/ServoControl.ino
 //
 // Milestone 8 - Kontrol Servo (sweep test).
-// Menggerakkan ke-4 servo secara berurutan untuk verifikasi wiring +
-// kontrol dasar, sebelum masuk Inverse Kinematics (Milestone 9).
+// REVISI: Base diganti dari SG90 360 continuous rotation menjadi
+// SG90 180 positional. Base sekarang dikontrol sama persis seperti
+// shoulder/elbow/gripper lewat moveServoSmooth() (target angle),
+// TIDAK ada lagi baseRotate() / time-based rotation.
 //
-// 3 servo positional (shoulder, elbow, gripper): SG90 180 derajat,
-// dikontrol pakai target angle (Servo::write) dengan smooth step.
-//
-// 1 servo base: SG90 360 continuous rotation, TIDAK punya sudut
-// absolut (Decision #029, Milestone 7) - dikontrol pakai arah +
-// durasi, ditangani via fungsi terpisah, bukan lewat helper yang
-// sama dengan 3 servo positional (Decision #035, #037, Milestone 8).
+// Catatan: Decision #029, #035, #037, #039, #040 (Milestone 8)
+// di-superseded oleh perubahan hardware ini. Base tidak lagi butuh
+// strategi durasi-per-derajat di Milestone 9 - sudut IK bisa
+// langsung di-write() seperti servo positional lainnya.
 
 #include <Servo.h>
 
 // ==========================================================
-// Pin Configuration - GANTI sesuai wiring kamu
+// Pin Configuration
 // ==========================================================
 const int PIN_BASE     = 8;
 const int PIN_SHOULDER = 9;
@@ -23,8 +22,10 @@ const int PIN_ELBOW    = 10;
 const int PIN_GRIPPER  = 11;
 
 // ==========================================================
-// Positional Servo Config (shoulder, elbow, gripper)
+// Positional Servo Config (base, shoulder, elbow, gripper)
+// Semua 4 servo sekarang jenis yang sama: SG90 180 positional.
 // ==========================================================
+const int BASE_HOME     = 0;
 const int SHOULDER_HOME = 90;
 const int ELBOW_HOME    = 90;
 const int GRIPPER_OPEN  = 90;
@@ -32,18 +33,6 @@ const int GRIPPER_CLOSE = 20;
 
 const int SERVO_STEP_DELAY = 15;   // ms antar step -> gerakan lebih halus
 const int SERVO_STEP_SIZE  = 2;    // derajat per step
-
-// ==========================================================
-// Base Servo Config (continuous rotation)
-// ==========================================================
-// Placeholder awal. Kalau base tidak diam sempurna di BASE_STOP_PULSE
-// (masih pelan-pelan muter), atau arah CW/CCW ternyata kebalik pas
-// sweep test, kalibrasi ulang tiga nilai ini (Decision #035).
-const int BASE_STOP_PULSE = 90;
-const int BASE_CW_PULSE   = 100;
-const int BASE_CCW_PULSE  = 80;
-
-enum BaseDirection { BASE_CW, BASE_CCW };
 
 // ==========================================================
 Servo baseServo;
@@ -60,17 +49,16 @@ void setup() {
   elbowServo.attach(PIN_ELBOW);
   gripperServo.attach(PIN_GRIPPER);
 
-  // Base harus diam dari awal, sebelum apapun lain terjadi
-  baseServo.write(BASE_STOP_PULSE);
-
-  // Servo positional mulai dari home
+  // Semua servo mulai dari home, termasuk base sekarang
+  baseServo.write(BASE_HOME);
   shoulderServo.write(SHOULDER_HOME);
   elbowServo.write(ELBOW_HOME);
   gripperServo.write(GRIPPER_OPEN);
 
   delay(1000);  // beri waktu servo settle di posisi awal
 
-  Serial.println("=== Milestone 8: Servo Sweep Test ===");
+  Serial.println("=== Milestone 8 (Revisi): Servo Sweep Test ===");
+  Serial.println("Base sekarang SG90 180 positional, bukan continuous rotation.");
 
   runSweepTest();
 
@@ -86,6 +74,11 @@ void loop() {
 // ==========================================================
 void runSweepTest() {
 
+  Serial.println("[Base] sweep 0 -> 180 -> home");
+  moveServoSmooth(baseServo, "Base", 0);
+  moveServoSmooth(baseServo, "Base", 180);
+  moveServoSmooth(baseServo, "Base", BASE_HOME);
+
   Serial.println("[Shoulder] sweep 60 -> 120 -> home");
   moveServoSmooth(shoulderServo, "Shoulder", 60);
   moveServoSmooth(shoulderServo, "Shoulder", 120);
@@ -99,16 +92,12 @@ void runSweepTest() {
   Serial.println("[Gripper] close -> open");
   moveServoSmooth(gripperServo, "Gripper", GRIPPER_CLOSE);
   moveServoSmooth(gripperServo, "Gripper", GRIPPER_OPEN);
-
-  Serial.println("[Base] rotate CW 1s -> stop -> CCW 1s -> stop");
-  baseRotate(BASE_CW, 1650);
-  delay(500);
-  baseRotate(BASE_CCW, 1135);
-  delay(500);
 }
 
 // ==========================================================
-// Positional Servo Helper (shoulder, elbow, gripper)
+// Positional Servo Helper - sekarang dipakai oleh SEMUA 4 servo
+// (base, shoulder, elbow, gripper), karena semuanya sudah jenis
+// SG90 180 positional yang sama.
 // ==========================================================
 void moveServoSmooth(Servo &servo, const char* label, int targetAngle) {
 
@@ -134,26 +123,4 @@ void moveServoSmooth(Servo &servo, const char* label, int targetAngle) {
   }
 
   servo.write(targetAngle);  // pastikan tepat di target
-}
-
-// ==========================================================
-// Base Servo Helper (continuous rotation)
-// Ditangani terpisah total, tidak pakai moveServoSmooth() (Decision #037)
-// karena interface-nya beda: arah + durasi, bukan target angle.
-// ==========================================================
-void baseRotate(BaseDirection direction, unsigned long durationMs) {
-
-  int pulse = (direction == BASE_CW) ? BASE_CW_PULSE : BASE_CCW_PULSE;
-
-  Serial.print("  Base: rotate ");
-  Serial.print(direction == BASE_CW ? "CW" : "CCW");
-  Serial.print(" selama ");
-  Serial.print(durationMs);
-  Serial.println("ms");
-
-  baseServo.write(pulse);
-  delay(durationMs);
-  baseServo.write(BASE_STOP_PULSE);
-
-  Serial.println("  Base: stop");
 }
