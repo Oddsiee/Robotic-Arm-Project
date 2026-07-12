@@ -4,6 +4,8 @@ from camera import Camera
 from detection import Detection
 from color import Color
 from selection import Selection
+from mapping import Mapping
+from serial_comm import SerialComm
 from config import DetectionConfig, WindowConfig
 
 
@@ -13,13 +15,17 @@ def main():
     detection = Detection()
     color = Color()
     selection = Selection(color)
+    mapping = Mapping()
+    serial_comm = SerialComm()
 
     try:
 
         camera.open()
+        serial_comm.connect()
 
         print(f"Tekan '{DetectionConfig.CAPTURE_REF_KEY}' saat ROI kosong untuk menangkap reference frame.")
         print("Tekan 'p' untuk print objek terpilih ke console.")
+        print("Tekan 's' untuk kirim objek terpilih ke Arduino via serial.")
 
         while True:
 
@@ -72,12 +78,31 @@ def main():
                 else:
                     print("No Object")
 
+            if key == ord('s'):
+
+                if selected:
+
+                    x_cm, y_cm = mapping.pixel_to_robot(selected["centroid"])
+                    print(f"Mapping: pixel {selected['centroid']} -> robot ({x_cm:.2f}, {y_cm:.2f}) cm")
+
+                    ok = serial_comm.send_and_wait(selected["color"], x_cm, y_cm)
+
+                    if not ok:
+                        print("Komunikasi serial gagal setelah beberapa percobaan. Menghentikan program.")
+                        break
+
+                elif objects:
+                    print("Ada objek terdeteksi, tapi tidak ada yang warnanya valid (semua UNKNOWN).")
+                else:
+                    print("Tidak ada objek untuk dikirim.")
+
     except Exception as e:
 
         print(f"Error: {e}")
 
     finally:
 
+        serial_comm.close()
         camera.release()
 
 

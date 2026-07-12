@@ -98,9 +98,9 @@ class MappingConfig:
     # Matriks homography 3x3 (row-major, 9 elemen), hasil kalibrasi
     # via cv2.getPerspectiveTransform. Default identity = placeholder.
     HOMOGRAPHY_MATRIX: tuple = ( 
-        -0.008550255654884004, 0.004906254139413923, 4.555445386498193,
-        -0.017464071369826202, -0.006900203197459619, 14.448876209971186,
-        -0.001130122111242908, -0.0006667793878077274, 1.0,
+        -0.021360002752026905, -0.0002797024488239314, 8.5058115133451,
+        6.785965451184588e-06, 0.02082410696384706, 9.16391150847448,
+        1.3998777055323363e-05, -2.6069606878315492e-05, 1.0,
     )
 
 
@@ -129,3 +129,19 @@ class ServoConfig:
     ELBOW_HOME: int = 90
     GRIPPER_OPEN: int = 90
     GRIPPER_CLOSE: int = 20
+
+# ==========================================================
+# Serial Communication (Milestone 7)
+# ==========================================================
+
+@dataclass(frozen=True)
+class SerialConfig:
+
+    PORT: str = "COM5"          # placeholder, update manual sesuai port Arduino kamu
+    BAUDRATE: int = 115200
+    TIMEOUT: float = 1.0        # timeout per-read pyserial (level koneksi)
+
+    ACK_TIMEOUT: float = 5.0    # total waktu tunggu balasan "DONE"
+    MAX_RETRIES: int = 3
+    RETRY_DELAY: float = 0.5    # jeda antar percobaan retry
+    ACK_TOKEN: str = "DONE"

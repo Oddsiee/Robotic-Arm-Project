@@ -84,9 +84,9 @@ Dikerjain bertahap lewat serangkaian milestone, tiap milestone diuji dulu sebelu
 - [x] Milestone 3 — Deteksi warna
 - [x] Milestone 4 — Deteksi banyak objek 
 - [x] Milestone 5 — Pemilihan objek (nentuin objek mana yang diproses kalau ada lebih dari satu)
-- [ ] Milestone 6 — Mapping koordinat kamera ke robot *(lagi di sini sekarang)*
-- [ ] Milestone 7 — Komunikasi serial Python ↔ Arduino
-- [ ] Milestone 8 — Kontrol servo
+- [x] Milestone 6 — Mapping koordinat kamera ke robot
+- [x] Milestone 7 — Komunikasi serial Python ↔ Arduino
+- [ ] Milestone 8 — Kontrol servo *(lagi di sini sekarang)*
 - [ ] Milestone 9 — Inverse kinematics
 - [ ] Milestone 10 — Pick and place
 - [ ] Milestone 11 — Integrasi penuh
