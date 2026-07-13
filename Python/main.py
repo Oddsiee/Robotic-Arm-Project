@@ -5,6 +5,7 @@ from detection import Detection
 from color import Color
 from selection import Selection
 from mapping import Mapping
+from inverse_kinematics import InverseKinematics
 from serial_comm import SerialComm
 from config import DetectionConfig, WindowConfig
 
@@ -16,6 +17,7 @@ def main():
     color = Color()
     selection = Selection(color)
     mapping = Mapping()
+    ik = InverseKinematics()
     serial_comm = SerialComm()
 
     try:
@@ -25,7 +27,7 @@ def main():
 
         print(f"Tekan '{DetectionConfig.CAPTURE_REF_KEY}' saat ROI kosong untuk menangkap reference frame.")
         print("Tekan 'p' untuk print objek terpilih ke console.")
-        print("Tekan 's' untuk kirim objek terpilih ke Arduino via serial.")
+        print("Tekan 's' untuk kirim sudut IK objek terpilih ke Arduino via serial.")
 
         while True:
 
@@ -85,7 +87,12 @@ def main():
                     x_cm, y_cm = mapping.pixel_to_robot(selected["centroid"])
                     print(f"Mapping: pixel {selected['centroid']} -> robot ({x_cm:.2f}, {y_cm:.2f}) cm")
 
-                    ok = serial_comm.send_and_wait(selected["color"], x_cm, y_cm)
+                    base_angle, shoulder_angle, elbow_angle = ik.compute(x_cm, y_cm)
+                    print(f"IK: base={base_angle:.2f} shoulder={shoulder_angle:.2f} elbow={elbow_angle:.2f}")
+
+                    ok = serial_comm.send_angles_and_wait(
+                        selected["color"], base_angle, shoulder_angle, elbow_angle
+                    )
 
                     if not ok:
                         print("Komunikasi serial gagal setelah beberapa percobaan. Menghentikan program.")
