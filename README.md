@@ -86,10 +86,10 @@ Dikerjain bertahap lewat serangkaian milestone, tiap milestone diuji dulu sebelu
 - [x] Milestone 5 — Pemilihan objek (nentuin objek mana yang diproses kalau ada lebih dari satu)
 - [x] Milestone 6 — Mapping koordinat kamera ke robot
 - [x] Milestone 7 — Komunikasi serial Python ↔ Arduino
-- [ ] Milestone 8 — Kontrol servo *(lagi di sini sekarang)*
-- [ ] Milestone 9 — Inverse kinematics
-- [ ] Milestone 10 — Pick and place
-- [ ] Milestone 11 — Integrasi penuh
+- [x] Milestone 8 — Kontrol servo
+- [x] Milestone 9 — Inverse kinematics
+- [x] Milestone 10 — Pick and place
+- [ ] Milestone 11 — Integrasi penuh *(lagi di sini sekarang)*
 - [ ] Milestone 12 — Optimisasi (kecepatan, akurasi, retry logic)
 - [ ] Milestone 13 — Pengujian di berbagai kondisi
 - [ ] Milestone 14 — Dokumentasi akhir
@@ -104,7 +104,7 @@ Diusahain tiap bagian (kamera, deteksi, mapping, serial, kinematika) bisa diuji 
 
 ## Lisensi
 
-Dibuat untuk keperluan edukasi.
+Dibuat untuk keperluan edukasi dan pemuas rasa gabut.
 
 ---
 
