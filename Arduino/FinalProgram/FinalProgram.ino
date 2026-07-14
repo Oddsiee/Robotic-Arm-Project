@@ -42,7 +42,7 @@ const int PIN_GRIPPER  = 11;
 // Shoulder & elbow di sudut ini otomatis jadi posisi "hover" -
 // aman buat base berputar tanpa capit nyentuh meja/objek lain.
 // ==========================================================
-const int BASE_HOME     = 0;
+const int BASE_HOME     = 35;
 const int SHOULDER_HOME = 90;
 const int ELBOW_HOME    = 90;
 
@@ -52,11 +52,11 @@ const int GRIPPER_CLOSE = 15;
 // ==========================================================
 // Drop Zone Constants (PLACEHOLDER - isi manual setelah tes fisik)
 // ==========================================================
-const int DROP_BLACK_BASE     = 0;    // TODO: isi hasil tes fisik
+const int DROP_BLACK_BASE     = 35;    // TODO: isi hasil tes fisik
 const int DROP_BLACK_SHOULDER = 60;   // TODO: isi hasil tes fisik
 const int DROP_BLACK_ELBOW    = 90;   // TODO: isi hasil tes fisik
 
-const int DROP_WHITE_BASE     = 180;  // TODO: isi hasil tes fisik
+const int DROP_WHITE_BASE     = 150;  // TODO: isi hasil tes fisik
 const int DROP_WHITE_SHOULDER = 60;   // TODO: isi hasil tes fisik
 const int DROP_WHITE_ELBOW    = 90;   // TODO: isi hasil tes fisik
 
@@ -182,8 +182,8 @@ void runPickAndPlace(String colorCode, int pickBase, int pickShoulder, int pickE
   delay(GRIP_SETTLE_DELAY);
 
   // 4. Naik (balik ke hover), angkat objek dari meja
-  moveServoSmooth(elbowServo, "Elbow", ELBOW_HOME);
   moveServoSmooth(shoulderServo, "Shoulder", SHOULDER_HOME);
+  moveServoSmooth(elbowServo, "Elbow", ELBOW_HOME);
 
   // --- DROP ---
 
