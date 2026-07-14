@@ -89,8 +89,8 @@ Dikerjain bertahap lewat serangkaian milestone, tiap milestone diuji dulu sebelu
 - [x] Milestone 8 — Kontrol servo
 - [x] Milestone 9 — Inverse kinematics
 - [x] Milestone 10 — Pick and place
-- [ ] Milestone 11 — Integrasi penuh *(lagi di sini sekarang)*
-- [ ] Milestone 12 — Optimisasi (kecepatan, akurasi, retry logic)
+- [x] Milestone 11 — Integrasi penuh
+- [ ] Milestone 12 — Optimisasi (kecepatan, akurasi, retry logic) *(lagi di sini sekarang)*
 - [ ] Milestone 13 — Pengujian di berbagai kondisi
 - [ ] Milestone 14 — Dokumentasi akhir
 
