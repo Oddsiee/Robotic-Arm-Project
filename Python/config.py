@@ -145,3 +145,19 @@ class SerialConfig:
     MAX_RETRIES: int = 3
     RETRY_DELAY: float = 0.5    # jeda antar percobaan retry
     ACK_TOKEN: str = "DONE"
+
+# ==========================================================
+# Dwell Lock / Debounce (Milestone 11)
+# ==========================================================
+ 
+@dataclass(frozen=True)
+class DwellLockConfig:
+ 
+    # Objek harus diam di posisi & warna yang sama selama ini (detik)
+    # sebelum sistem otomatis memprosesnya (Decision #058).
+    LOCK_DURATION: float = 3
+ 
+    # Toleransi geser posisi centroid (piksel) supaya objek masih
+    # dianggap "objek yang sama" antar frame (noise deteksi kecil
+    # tidak mereset timer).
+    POSITION_TOLERANCE: int = 20

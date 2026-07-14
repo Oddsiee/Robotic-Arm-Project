@@ -47,7 +47,7 @@ const int SHOULDER_HOME = 90;
 const int ELBOW_HOME    = 90;
 
 const int GRIPPER_OPEN  = 90;
-const int GRIPPER_CLOSE = 15;
+const int GRIPPER_CLOSE = 5;
 
 // ==========================================================
 // Drop Zone Constants (PLACEHOLDER - isi manual setelah tes fisik)
@@ -56,7 +56,7 @@ const int DROP_BLACK_BASE     = 35;    // TODO: isi hasil tes fisik
 const int DROP_BLACK_SHOULDER = 60;   // TODO: isi hasil tes fisik
 const int DROP_BLACK_ELBOW    = 90;   // TODO: isi hasil tes fisik
 
-const int DROP_WHITE_BASE     = 150;  // TODO: isi hasil tes fisik
+const int DROP_WHITE_BASE     = 170;  // TODO: isi hasil tes fisik
 const int DROP_WHITE_SHOULDER = 60;   // TODO: isi hasil tes fisik
 const int DROP_WHITE_ELBOW    = 90;   // TODO: isi hasil tes fisik
 

@@ -5,9 +5,10 @@ from detection import Detection
 from color import Color
 from selection import Selection
 from mapping import Mapping
-from inverse_kinematics import InverseKinematics
+from inverse_kinematics import InverseKinematics, WorkspaceError
+from dwell_lock import DwellLock
 from serial_comm import SerialComm
-from config import DetectionConfig, WindowConfig
+from config import DetectionConfig, WindowConfig, DwellLockConfig
 
 
 def main():
@@ -18,6 +19,7 @@ def main():
     selection = Selection(color)
     mapping = Mapping()
     ik = InverseKinematics()
+    dwell_lock = DwellLock(DwellLockConfig.LOCK_DURATION, DwellLockConfig.POSITION_TOLERANCE)
     serial_comm = SerialComm()
 
     try:
@@ -26,8 +28,9 @@ def main():
         serial_comm.connect()
 
         print(f"Tekan '{DetectionConfig.CAPTURE_REF_KEY}' saat ROI kosong untuk menangkap reference frame.")
-        print("Tekan 'p' untuk print objek terpilih ke console.")
-        print("Tekan 's' untuk kirim sudut IK objek terpilih ke Arduino via serial.")
+        print(f"Setelah reference frame diset, objek yang diam >= {DwellLockConfig.LOCK_DURATION}s otomatis diproses.")
+        print("Tekan 'p' untuk print objek terpilih ke console (debug).")
+        print("Tekan 'q' untuk keluar.")
 
         while True:
 
@@ -49,8 +52,13 @@ def main():
             if objects:
                 selected = selection.select(roi, objects)
 
+            # Update dwell lock TIAP frame (walau selected None), supaya
+            # timer reset begitu objek hilang/berpindah (Decision #058).
+            locked, remaining = dwell_lock.update(selected)
+
             roi_display = detection.draw_objects(roi, objects) if objects else roi
             roi_display = selection.draw_selected(roi_display, selected)
+            roi_display = dwell_lock.draw_status(roi_display, selected, locked, remaining)
 
             frame = camera.draw_info(frame)
             frame = camera.draw_roi(frame)
@@ -69,7 +77,8 @@ def main():
 
             if key == ord(DetectionConfig.CAPTURE_REF_KEY):
                 detection.set_reference(roi)
-                print("Reference frame captured.")
+                dwell_lock.reset()
+                print("Reference frame captured. Mode otomatis aktif.")
 
             if key == ord('p'):
                 if selected:
@@ -80,28 +89,51 @@ def main():
                 else:
                     print("No Object")
 
-            if key == ord('s'):
+            # ==================================================
+            # Mode Otomatis (Milestone 11, Decision #055 + #058)
+            #
+            # Diproses HANYA kalau objek sudah "locked" oleh DwellLock
+            # (diam di posisi+warna yang sama >= LOCK_DURATION detik).
+            # Mencegah sistem memicu pick-and-place saat objek masih
+            # bergerak / tangan operator masih di ROI.
+            #
+            # send_angles_and_wait() sifatnya blocking (nunggu "DONE"),
+            # jadi loop ini otomatis "pause" sendiri selama Arduino
+            # menjalankan siklus fisiknya (Decision #030/#031 tetap
+            # berlaku).
+            # ==================================================
+            if locked:
 
-                if selected:
+                x_cm, y_cm = mapping.pixel_to_robot(selected["centroid"])
 
-                    x_cm, y_cm = mapping.pixel_to_robot(selected["centroid"])
-                    print(f"Mapping: pixel {selected['centroid']} -> robot ({x_cm:.2f}, {y_cm:.2f}) cm")
-
+                try:
                     base_angle, shoulder_angle, elbow_angle = ik.compute(x_cm, y_cm)
-                    print(f"IK: base={base_angle:.2f} shoulder={shoulder_angle:.2f} elbow={elbow_angle:.2f}")
+                except WorkspaceError as e:
+                    # Target di luar jangkauan geometris atau di luar
+                    # batas fisik servo (Decision #056) - skip siklus
+                    # ini. Reset lock supaya wajib nunggu dwell-time
+                    # baru lagi sebelum retry (bukan spam tiap frame).
+                    print(f"[SKIP] {e}")
+                    dwell_lock.reset()
+                    continue
 
-                    ok = serial_comm.send_angles_and_wait(
-                        selected["color"], base_angle, shoulder_angle, elbow_angle
-                    )
+                print(
+                    f"Auto-pick: {selected['color']} pixel {selected['centroid']} "
+                    f"-> robot ({x_cm:.2f},{y_cm:.2f})cm "
+                    f"-> base={base_angle:.2f} shoulder={shoulder_angle:.2f} elbow={elbow_angle:.2f}"
+                )
 
-                    if not ok:
-                        print("Komunikasi serial gagal setelah beberapa percobaan. Menghentikan program.")
-                        break
+                ok = serial_comm.send_angles_and_wait(
+                    selected["color"], base_angle, shoulder_angle, elbow_angle
+                )
 
-                elif objects:
-                    print("Ada objek terdeteksi, tapi tidak ada yang warnanya valid (semua UNKNOWN).")
-                else:
-                    print("Tidak ada objek untuk dikirim.")
+                # Reset lock setelah satu siklus selesai (berhasil atau
+                # gagal) - siklus berikutnya wajib mulai dwell-time baru.
+                dwell_lock.reset()
+
+                if not ok:
+                    print("Komunikasi serial gagal setelah beberapa percobaan. Menghentikan program.")
+                    break
 
     except Exception as e:
 
