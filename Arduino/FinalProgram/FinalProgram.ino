@@ -65,13 +65,13 @@ const int DROP_WHITE_ELBOW    = 90;   // TODO: isi hasil tes fisik
 // karena body robot tidak kuat gerakan cepat/hentakan.
 // Tuning lanjut kalau perlu setelah tes fisik.
 // ==========================================================
-const int SERVO_STEP_DELAY = 20;   // ms antar step
+const int SERVO_STEP_DELAY = 9;   // ms antar step
 const int SERVO_STEP_SIZE  = 1;    // derajat per step
 
 // Jeda "settle" antar fase gerakan (base selesai -> baru turun, dst)
 const unsigned long SETTLE_DELAY         = 400;  // ms, base selesai -> sebelum turun
-const unsigned long GRIP_SETTLE_DELAY    = 300;  // ms, gripper nutup -> sebelum naik
-const unsigned long RELEASE_SETTLE_DELAY = 300;  // ms, gripper buka -> sebelum naik
+const unsigned long GRIP_SETTLE_DELAY    = 200;  // ms, gripper nutup -> sebelum naik
+const unsigned long RELEASE_SETTLE_DELAY = 200;  // ms, gripper buka -> sebelum naik
 
 // ==========================================================
 Servo baseServo;
@@ -217,8 +217,6 @@ void runPickAndPlace(String colorCode, int pickBase, int pickShoulder, int pickE
   moveServoSmooth(elbowServo, "Elbow", ELBOW_HOME);
   moveServoSmooth(shoulderServo, "Shoulder", SHOULDER_HOME);
 
-  // 9. Base kembali ke home
-  moveServoSmooth(baseServo, "Base", BASE_HOME);
 }
 
 // ==========================================================

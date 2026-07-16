@@ -92,7 +92,7 @@ class InverseKinematics:
         if base_calculation < 90:
             base_angle = base_calculation + 5
         else:
-            base_angle = base_calculation +  (base_calculation/8) #koreksi overshoot
+            base_angle = base_calculation +  (base_calculation/20) #koreksi overshoot
 
         # --- Servo limit check (Decision #056, Milestone 11) ---
         self._check_limit("base", base_angle, self.BASE_MIN, self.BASE_MAX)

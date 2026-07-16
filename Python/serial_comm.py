@@ -25,13 +25,28 @@ class SerialComm:
 
     Handshake tetap blocking: kirim, tunggu ack "DONE", retry, atau stop
     kalau semua retry gagal (Decision #030, #031).
+
+    logger (opsional): objek dengan method .log(message) - di-inject
+    dari main.py (instance Dashboard) supaya semua pesan komunikasi
+    serial (kirim, ack DONE, retry, error) tampil di panel log UI,
+    bukan cuma di terminal. Kalau tidak di-inject (None), fallback ke
+    print() biasa - SerialComm tetap bisa dipakai standalone/testing
+    tanpa Dashboard, tidak ada perubahan behavior untuk caller lama.
     """
 
-    def __init__(self):
+    def __init__(self, logger=None):
         self.port = SerialConfig.PORT
         self.baudrate = SerialConfig.BAUDRATE
         self.timeout = SerialConfig.TIMEOUT
         self.conn = None
+        self.logger = logger
+
+    def _log(self, message, level="SERIAL"):
+
+        if self.logger is not None:
+            self.logger.log(message, level)
+        else:
+            print(message)
 
     def connect(self):
 
@@ -41,7 +56,7 @@ class SerialComm:
         time.sleep(2)
         self.conn.reset_input_buffer()
 
-        print(f"Terhubung ke Arduino di {self.port} ({self.baudrate} baud).")
+        self._log(f"Connected to Arduino on {self.port} ({self.baudrate} baud).", "INFO")
 
     def close(self):
 
@@ -88,7 +103,7 @@ class SerialComm:
                 return True
 
             if line:
-                print(f"Arduino: {line}")
+                self._log(f"Arduino: {line}", "INFO")
 
         return False
 
@@ -101,18 +116,18 @@ class SerialComm:
         for attempt in range(1, SerialConfig.MAX_RETRIES + 1):
 
             message = self._send(color, x_cm, y_cm)
-            print(f"[Percobaan {attempt}/{SerialConfig.MAX_RETRIES}] Kirim: {message.strip()}")
+            self._log(f"[Attempt {attempt}/{SerialConfig.MAX_RETRIES}] Send: {message.strip()}", "SEND")
 
             if self._wait_ack():
-                print("Ack DONE diterima.")
+                self._log("ACK received.", "ACK")
                 return True
 
-            print(f"Timeout menunggu ack (>{SerialConfig.ACK_TIMEOUT}s).")
+            self._log(f"ACK timeout (>{SerialConfig.ACK_TIMEOUT}s).", "ERR")
 
             if attempt < SerialConfig.MAX_RETRIES:
                 time.sleep(SerialConfig.RETRY_DELAY)
 
-        print("Semua percobaan gagal. Koneksi serial dianggap tidak stabil.")
+        self._log("Semua percobaan gagal. Koneksi serial dianggap tidak stabil.", "ERR")
         return False
 
     def send_angles_and_wait(self, color, base_angle, shoulder_angle, elbow_angle):
@@ -131,16 +146,16 @@ class SerialComm:
         for attempt in range(1, SerialConfig.MAX_RETRIES + 1):
 
             message = self._send_angles(color, base_angle, shoulder_angle, elbow_angle)
-            print(f"[Percobaan {attempt}/{SerialConfig.MAX_RETRIES}] Kirim: {message.strip()}")
+            self._log(f"[Attempt {attempt}/{SerialConfig.MAX_RETRIES}] Send: {message.strip()}", "SEND")
 
             if self._wait_ack():
-                print("Ack DONE diterima.")
+                self._log("ACK received.", "ACK")
                 return True
 
-            print(f"Timeout menunggu ack (>{SerialConfig.ACK_TIMEOUT}s).")
+            self._log(f"ACK timeout (>{SerialConfig.ACK_TIMEOUT}s).", "ERR")
 
             if attempt < SerialConfig.MAX_RETRIES:
                 time.sleep(SerialConfig.RETRY_DELAY)
 
-        print("Semua percobaan gagal. Koneksi serial dianggap tidak stabil.")
+        self._log("Semua percobaan gagal. Koneksi serial dianggap tidak stabil.", "ERR")
         return False

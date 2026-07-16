@@ -8,7 +8,8 @@ from mapping import Mapping
 from inverse_kinematics import InverseKinematics, WorkspaceError
 from dwell_lock import DwellLock
 from serial_comm import SerialComm
-from config import DetectionConfig, WindowConfig, DwellLockConfig
+from dashboard import Dashboard
+from config import DetectionConfig, DwellLockConfig
 
 
 def main():
@@ -20,24 +21,31 @@ def main():
     mapping = Mapping()
     ik = InverseKinematics()
     dwell_lock = DwellLock(DwellLockConfig.LOCK_DURATION, DwellLockConfig.POSITION_TOLERANCE)
-    serial_comm = SerialComm()
+    dashboard = Dashboard()
+
+    # Dashboard di-inject sebagai logger ke SerialComm (dependency
+    # injection, konsisten dengan pola project) - semua print internal
+    # SerialComm (kirim, ack DONE, retry, error) otomatis tampil di
+    # panel log dashboard, bukan cuma di terminal.
+    serial_comm = SerialComm(logger=dashboard)
 
     try:
 
         camera.open()
         serial_comm.connect()
 
-        print(f"Tekan '{DetectionConfig.CAPTURE_REF_KEY}' saat ROI kosong untuk menangkap reference frame.")
-        print(f"Setelah reference frame diset, objek yang diam >= {DwellLockConfig.LOCK_DURATION}s otomatis diproses.")
-        print("Tekan 'p' untuk print objek terpilih ke console (debug).")
-        print("Tekan 'q' untuk keluar.")
+        dashboard.log(f"Tekan '{DetectionConfig.CAPTURE_REF_KEY}' saat ROI kosong untuk menangkap reference frame.", "INFO")
+        dashboard.log(f"Setelah reference frame diset, objek yang diam >= {DwellLockConfig.LOCK_DURATION}s otomatis diproses.", "INFO")
+        dashboard.log("Tekan 'p' untuk print objek terpilih ke log (debug).", "INFO")
+        dashboard.log("Tekan 'm' untuk toggle panel Mask (debug).", "INFO")
+        dashboard.log("Tekan 'q' untuk keluar.", "INFO")
 
         while True:
 
             frame, roi = camera.read()
 
             if frame is None:
-                print("Error: Gagal membaca frame.")
+                dashboard.log("Error: Gagal membaca frame.", "ERR")
                 break
 
             camera.update_fps()
@@ -56,6 +64,15 @@ def main():
             # timer reset begitu objek hilang/berpindah (Decision #058).
             locked, remaining = dwell_lock.update(selected)
 
+            # ── Update dashboard state tiap frame ──
+            dashboard.update_state(
+                armed=detection.has_reference(),
+                fps=camera.fps,
+                selected=selected,
+                locked=locked,
+                remaining=remaining,
+            )
+
             roi_display = detection.draw_objects(roi, objects) if objects else roi
             roi_display = selection.draw_selected(roi_display, selected)
             roi_display = dwell_lock.draw_status(roi_display, selected, locked, remaining)
@@ -64,11 +81,10 @@ def main():
             frame = camera.draw_roi(frame)
             frame = detection.draw_status(frame, objects)
 
-            camera.show(frame)
-            camera.show_roi(roi_display)
-
-            if mask is not None:
-                cv2.imshow(WindowConfig.MASK_WINDOW, mask)
+            # Satu window: Camera + ROI (dengan status dwell-lock) +
+            # Mask (toggle) + Log, menggantikan 3 window terpisah.
+            composite = dashboard.render(frame, roi_display, mask)
+            dashboard.show(composite)
 
             key = camera.get_key()
 
@@ -78,16 +94,19 @@ def main():
             if key == ord(DetectionConfig.CAPTURE_REF_KEY):
                 detection.set_reference(roi)
                 dwell_lock.reset()
-                print("Reference frame captured. Mode otomatis aktif.")
+                dashboard.log("Reference frame captured. Mode otomatis aktif.", "REF")
+
+            if key == ord('m'):
+                dashboard.toggle_mask()
 
             if key == ord('p'):
                 if selected:
                     cx, cy = selected["centroid"]
-                    print(f"Selected: #{selected['id']} {selected['color']} ({cx},{cy})")
+                    dashboard.log(f"Selected: #{selected['id']} {selected['color']} ({cx},{cy})", "INFO")
                 elif objects:
-                    print("Objects detected, but none with valid color (all UNKNOWN).")
+                    dashboard.log("Objects detected, but none with valid color (all UNKNOWN).", "INFO")
                 else:
-                    print("No Object")
+                    dashboard.log("No Object", "INFO")
 
             # ==================================================
             # Mode Otomatis (Milestone 11, Decision #055 + #058)
@@ -109,35 +128,44 @@ def main():
                 try:
                     base_angle, shoulder_angle, elbow_angle = ik.compute(x_cm, y_cm)
                 except WorkspaceError as e:
-                    # Target di luar jangkauan geometris atau di luar
-                    # batas fisik servo (Decision #056) - skip siklus
-                    # ini. Reset lock supaya wajib nunggu dwell-time
-                    # baru lagi sebelum retry (bukan spam tiap frame).
-                    print(f"[SKIP] {e}")
+                    dashboard.log(f"[SKIP] {e}", "SKIP")
+                    dashboard.update_state(angles=None)
                     dwell_lock.reset()
                     continue
 
-                print(
+                # Update state: tampilkan IK angles di status card
+                dashboard.update_state(
+                    angles=(base_angle, shoulder_angle, elbow_angle),
+                    processing=True,
+                )
+
+                dashboard.log(
                     f"Auto-pick: {selected['color']} pixel {selected['centroid']} "
                     f"-> robot ({x_cm:.2f},{y_cm:.2f})cm "
-                    f"-> base={base_angle:.2f} shoulder={shoulder_angle:.2f} elbow={elbow_angle:.2f}"
+                    f"-> base={base_angle:.2f} shoulder={shoulder_angle:.2f} elbow={elbow_angle:.2f}",
+                    "LOCK"
                 )
 
                 ok = serial_comm.send_angles_and_wait(
                     selected["color"], base_angle, shoulder_angle, elbow_angle
                 )
 
-                # Reset lock setelah satu siklus selesai (berhasil atau
-                # gagal) - siklus berikutnya wajib mulai dwell-time baru.
+                dashboard.update_state(
+                    serial_ok=ok,
+                    processing=False,
+                    angles=None,
+                    last_cmd=selected["color"] if ok else "",
+                )
+
                 dwell_lock.reset()
 
                 if not ok:
-                    print("Komunikasi serial gagal setelah beberapa percobaan. Menghentikan program.")
+                    dashboard.log("Komunikasi serial gagal setelah beberapa percobaan. Menghentikan program.", "ERR")
                     break
 
     except Exception as e:
 
-        print(f"Error: {e}")
+        dashboard.log(f"Error: {e}")
 
     finally:
 

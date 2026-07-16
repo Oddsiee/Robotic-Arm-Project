@@ -22,6 +22,7 @@ class WindowConfig:
     CAMERA_WINDOW: str = "Robotic Arm Camera"
     ROI_WINDOW: str = "ROI"
     MASK_WINDOW: str = "Mask"
+    MAIN_WINDOW: str = "Robotic Arm - Dashboard"
 
 
 # ==========================================================
@@ -46,10 +47,10 @@ class ROIConfig:
 class DetectionConfig:
 
     # Preprocessing (Gaussian blur, harus ganjil)
-    BLUR_KERNEL: int = 19
+    BLUR_KERNEL: int = 17
 
     # Background subtraction
-    DIFF_THRESHOLD: int = 16
+    DIFF_THRESHOLD: int = 14
 
     # Morphology
     MORPH_KERNEL: int = 8
@@ -69,27 +70,14 @@ class DetectionConfig:
 @dataclass(frozen=True)
 class HSVConfig:
 
-    BLACK_LOWER: tuple = (16, 23, 0)
-    BLACK_UPPER: tuple = (180, 255, 85)
+    BLACK_LOWER: tuple = (95, 7, 0)
+    BLACK_UPPER: tuple = (180, 249, 88)
 
-    WHITE_LOWER: tuple = (0, 19, 149)
-    WHITE_UPPER: tuple = (119, 255, 255)
-
-
-# ==========================================================
-# Serial Communication (Milestone 7)
-# ==========================================================
-
-@dataclass(frozen=True)
-class SerialConfig:
-
-    PORT: str = "COM3"
-    BAUDRATE: int = 115200
-    TIMEOUT: float = 1.0
-
+    WHITE_LOWER: tuple = (97, 0, 92)
+    WHITE_UPPER: tuple = (180, 255, 255)
 
 # ==========================================================
-# Camera Mapping (Milestone 6)
+# Dwell Lock / Debounce (Milestone 11)
 # ==========================================================
 
 @dataclass(frozen=True)
@@ -155,9 +143,29 @@ class DwellLockConfig:
  
     # Objek harus diam di posisi & warna yang sama selama ini (detik)
     # sebelum sistem otomatis memprosesnya (Decision #058).
-    LOCK_DURATION: float = 3
+    LOCK_DURATION: float = 2
  
     # Toleransi geser posisi centroid (piksel) supaya objek masih
     # dianggap "objek yang sama" antar frame (noise deteksi kecil
     # tidak mereset timer).
-    POSITION_TOLERANCE: int = 20
+    POSITION_TOLERANCE: int = 25
+
+
+# ==========================================================
+# Dashboard UI (Sub Milestone 12)
+# ==========================================================
+
+@dataclass(frozen=True)
+class DashboardConfig:
+
+    # Lebar tampilan CAMERA di dashboard (px). Frame kamera asli
+    # (CameraConfig.WIDTH/HEIGHT, mis. 1280x720) di-resize proporsional
+    # ke lebar ini SEBELUM digabung ke composite.
+    CAMERA_DISPLAY_WIDTH: int = 540
+
+    # Lebar kolom kanan (sidebar: ROI preview + status cards)
+    SIDE_PANEL_WIDTH: int = 260
+
+    # Panel log di bagian bawah
+    LOG_MAX_LINES: int = 8        # jumlah baris pesan
+    LOG_LINE_HEIGHT: int = 19     # jarak antar baris (px)
