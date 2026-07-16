@@ -1,110 +1,154 @@
 # Vision-Guided Robotic Arm
 
-Lengan robot 4-DOF yang pakai webcam dan OpenCV buat nemuin objek hitam dan putih di atas meja, nentuin posisinya, terus ngambil objek itu pakai gripper yang dikontrol Arduino. Ini proyek pribadi, sisi computer vision-nya di Python, sisi kinematika dan kontrol motor di Arduino.
+Lengan robot 4-DOF yang menggunakan webcam dan OpenCV untuk mendeteksi objek hitam dan putih di atas meja, menentukan posisinya dalam koordinat dunia nyata, lalu mengambil dan memindahkan objek ke zona drop berdasarkan warnanya — **sepenuhnya otomatis**.
 
-Aku dokumentasiin seluruh proses buildnya di sini sambil jalan, milestone demi milestone, bukan langsung dump proyek yang udah jadi di akhir. Jadi wajar kalau README (dan kodenya) ini masih akan terus berubah.
+Computer vision di Python (OpenCV), kinematika dan kontrol motor di Arduino Uno.
 
 ---
 
-## Yang seharusnya bisa dilakuin
+## Yang Dilakukan Sistem
 
-1. Ambil frame dari webcam yang diarahin ke bawah, ke area kerja.
-2. Cari objek di dalam region of interest (ROI) yang udah ditentuin.
-3. Bedain warna hitam dan putih.
-4. Konversi posisi pixel objek jadi koordinat dunia nyata.
-5. Kirim koordinat itu lewat serial ke Arduino.
-6. Jalanin inverse kinematics buat dapetin sudut tiap servo.
-7. Gerakin lengan, ambil objeknya, terus taruh di zona yang sesuai — hitam di kiri, putih di kanan.
-
-Belum ada yang lebih kompleks dari itu buat sekarang. Belum ada warna selain hitam/putih, belum bisa nyusun objek, belum multi-arm.
+1. Menangkap frame dari webcam yang diarahkan top-down ke area kerja.
+2. Mendeteksi objek di dalam Region of Interest (ROI) via background subtraction.
+3. Mengklasifikasikan warna objek: BLACK atau WHITE (HSV thresholding).
+4. Memilih satu objek untuk diproses (area terbesar dengan warna valid).
+5. Menunggu objek diam ≥2 detik (dwell-time lock / debounce).
+6. Mengonversi koordinat pixel ke koordinat robot (cm) via homography 3×3.
+7. Menghitung sudut servo (base, shoulder, elbow) via inverse kinematics.
+8. Mengirim sudut ke Arduino via serial: `B/W,base,shoulder,elbow`.
+9. Arduino menjalankan siklus pick-and-place penuh: Home → Pick → Drop → Home.
+10. Membalas `DONE` ke Python, lalu sistem melanjutkan ke objek berikutnya.
 
 ---
 
 ## Hardware
 
-- Arduino Uno
-- 4x servo SG90 (base, shoulder, elbow, gripper)
-- Webcam USB, dipasang kurang lebih top-down di atas area kerja
-- Rangka lengan 4-DOF (base→shoulder ±8cm, shoulder→elbow ±6cm, elbow→pivot gripper ±4cm, pivot→ujung capit ±10cm)
-
-**Technical debt yang masih ada:** servo-servo saat ini masih dapet daya langsung dari Arduino, yang oke-oke aja kalau testing satu servo, tapi bakal bermasalah begitu semuanya jalan bareng. Perlu dipindah ke power supply eksternal 5V dengan ground yang sama sebelum masuk tahap integrasi penuh — dicatat di sini biar nggak lupa.
+| Komponen | Detail |
+|----------|--------|
+| Controller | Arduino Uno |
+| Servo ×4 | SG90 180° positional (base, shoulder, elbow, gripper) |
+| Kamera | Webcam USB, fixed mount ~top-down |
+| Rangka | 4-DOF: base→shoulder ±8cm, shoulder→elbow ±6cm, elbow→gripper ±4cm, gripper ±10cm |
+| Power | ⚠️ Servo masih dari Arduino — perlu external 5V supply untuk produksi |
 
 ---
 
-## Software
+## Software Stack
 
-- Python 3 + OpenCV buat sisi vision
-- PySerial buat komunikasi ke Arduino
-- NumPy buat perhitungan koordinat
-- Arduino IDE / library Servo di sisi mikrokontroler
+| Layer | Teknologi |
+|-------|-----------|
+| Vision + Mapping + IK | Python 3 + OpenCV + NumPy |
+| Serial | PySerial |
+| UI Dashboard | OpenCV primitives (Apple HIG dark mode) |
+| Kontrol Servo | Arduino C++ (`Servo.h`) |
+| Protokol | USB Serial 115200 baud |
 
-### Struktur
+---
+
+## Struktur Proyek
 
 ```
-RoboticArmProject/
+Robotic Arm/
 │
 ├── Arduino/
+│   ├── FinalProgram/
+│   │   └── FinalProgram.ino      # Sketch produksi: pick-and-place penuh
+│   └── ServoControl/
+│       └── ServoControl.ino      # Sketch test: sweep test 4 servo
 │
 ├── Python/
-│   ├── camera.py      # webcam, ROI, overlay FPS, display
-│   ├── detection.py    # deteksi objek
-│   ├── color.py         # klasifikasi hitam/putih
-│   ├── mapping.py     # pixel → koordinat robot
-│   ├── serial.py         # komunikasi Python ↔ Arduino
-│   ├── config.py       # semua konstanta yang bisa diatur ada di sini
-│   └── main.py           # nyatuin semuanya
+│   ├── main.py                   # Orchestrator — loop otomatis penuh
+│   ├── camera.py                 # Webcam, ROI, FPS
+│   ├── detection.py              # Background subtraction + contour
+│   ├── color.py                  # Klasifikasi HSV (BLACK/WHITE)
+│   ├── selection.py              # Pemilihan objek (area terbesar)
+│   ├── mapping.py                # Pixel → Robot cm (homography)
+│   ├── inverse_kinematics.py     # IK solver + WorkspaceError
+│   ├── dwell_lock.py             # Debounce: objek harus diam ≥ N detik
+│   ├── serial_comm.py            # Serial Python↔Arduino (blocking handshake)
+│   ├── dashboard.py              # UI compositor Apple HIG (~550 baris)
+│   ├── config.py                 # Semua konstanta (dataclass)
+│   ├── Calibration color.py      # Tool: kalibrasi HSV threshold
+│   ├── calibration_mapping.py    # Tool: kalibrasi homography (4 titik)
+│   ├── test_mapping.py           # Tool: validasi mapping
+│   └── Robotic Arm Control Code.py  # Legacy: test keyboard→serial
 │
-├── Calibration/
-├── Documentation/
-├── Test/
+├── Documentation/                # 14 file milestone (M0–M14) + PROJECT.md
 └── README.md
 ```
-
-Sisi Python sengaja ditulis pakai OOP — satu class buat satu tanggung jawab, `main.py` cuma jadi orchestrator. Semua angka-angka yang bisa berubah (resolusi, batas ROI, threshold, dll) dipusatkan di `config.py` sebagai dataclass, bukan kesebar di banyak file — ini udah nyelametin aku dari beberapa momen "loh kok ini hardcode ya" pas ngoding.
 
 ---
 
 ## Alur Sistem
 
 ```
-Camera → Crop ROI → Object Detection → Color Detection
-       → Coordinate Mapping → Serial → Arduino
-       → Inverse Kinematics → Servo → Pick / Place
+Webcam → Crop ROI → Background Subtraction → Contour Detection
+  → Color Classification (HSV) → Object Selection (largest area)
+    → Dwell Lock (≥2s stable) → Pixel→Robot (Homography)
+      → Inverse Kinematics → Serial (B/W,base,shoulder,elbow)
+        → Arduino → Pick → Drop → Home → "DONE" → Loop
 ```
 
 ---
 
-## Progres Sekarang
+## Cara Menjalankan
 
-Dikerjain bertahap lewat serangkaian milestone, tiap milestone diuji dulu sebelum lanjut ke berikutnya, daripada langsung bangun semuanya sekaligus:
+### 1. Arduino
+- Buka `Arduino/FinalProgram/FinalProgram.ino` di Arduino IDE
+- Upload ke Arduino Uno
+- Pastikan Serial Monitor **tidak** terbuka (port akan dipakai Python)
 
-- [x] Milestone 0 — Perencanaan sistem (layout workspace, sistem koordinat, protokol serial, arsitektur)
-- [x] Milestone 1 — Kalibrasi kamera (1280×720, ROI udah fix, FPS stabil)
-- [x] Milestone 2 — Deteksi objek
-- [x] Milestone 3 — Deteksi warna
-- [x] Milestone 4 — Deteksi banyak objek 
-- [x] Milestone 5 — Pemilihan objek (nentuin objek mana yang diproses kalau ada lebih dari satu)
-- [x] Milestone 6 — Mapping koordinat kamera ke robot
-- [x] Milestone 7 — Komunikasi serial Python ↔ Arduino
-- [x] Milestone 8 — Kontrol servo
-- [x] Milestone 9 — Inverse kinematics
-- [x] Milestone 10 — Pick and place
-- [x] Milestone 11 — Integrasi penuh
-- [ ] Milestone 12 — Optimisasi (kecepatan, akurasi, retry logic) *(lagi di sini sekarang)*
-- [ ] Milestone 13 — Pengujian di berbagai kondisi
-- [ ] Milestone 14 — Dokumentasi akhir
+### 2. Python
+```bash
+pip install opencv-python numpy pyserial
+cd Python
+python main.py
+```
+
+### 3. Operasi
+| Tombol | Fungsi |
+|--------|--------|
+| `r` | Tangkap reference frame (ROI kosong) — mengaktifkan mode otomatis |
+| `m` | Toggle panel Mask Debug |
+| `p` | Print objek terpilih ke log |
+| `q` | Keluar |
+
+Setelah reference frame diset, sistem berjalan **otomatis penuh**: deteksi → lock → pick → drop → ulangi.
+
+---
+
+## Progress
+
+- [x] Milestone 0 — Perencanaan Sistem
+- [x] Milestone 1 — Kalibrasi Kamera
+- [x] Milestone 2 — Deteksi Objek
+- [x] Milestone 3 — Deteksi Warna
+- [x] Milestone 4 — Deteksi Banyak Objek
+- [x] Milestone 5 — Pemilihan Objek
+- [x] Milestone 6 — Camera to Robot Mapping
+- [x] Milestone 7 — Python ↔ Arduino Serial
+- [x] Milestone 8 — Kontrol Servo
+- [x] Milestone 9 — Inverse Kinematics
+- [x] Milestone 10 — Pick and Place
+- [x] Milestone 11 — Integrasi Vision + Robot
+- [x] Milestone 12 — Optimisasi (Dashboard UI)
+- [x] Milestone 13 — Pengujian
+- [x] Milestone 14 — Dokumentasi ✅
 
 ---
 
-## Catatan Pendekatan
+## Engineering Principles
 
-Diusahain tiap bagian (kamera, deteksi, mapping, serial, kinematika) bisa diuji sendiri-sendiri dulu sebelum digabung semua, biar kalau ada yang error, debugging-nya nggak jadi nebak-nebak dari lima subsistem yang mana. Masih jauh dari selesai, jadi beberapa folder di atas masih placeholder.
-
----
+- **Modular** — 1 class = 1 tanggung jawab
+- **Config-driven** — semua konstanta di `config.py` (dataclass)
+- **Dependency injection** — tidak ada `import` silang antar modul
+- **State-driven UI** — dashboard menerima state, tidak melakukan side effect
+- **Kalibrasi terpisah** — tool kalibrasi terisolasi dari kode runtime
+- **Validasi defensive** — `WorkspaceError` mencegah command invalid ke servo
 
 ## Lisensi
 
-Dibuat untuk keperluan edukasi dan pemuas rasa gabut.
+Dibuat untuk keperluan edukasi dan pemuas rasa gabut liburan semester.
 
 ---
 
