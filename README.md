@@ -112,3 +112,21 @@ Dibuat untuk keperluan edukasi dan pemuas rasa gabut.
 
 **Dumadio Digdaya**
 Teknik Elektro, Universitas Diponegoro, Indonesia
+
+---
+
+## OpenRouter helper (PowerShell)
+
+A local PowerShell helper script is included at scripts\openrouter.ps1. It reads OPENROUTER_API_KEY and OPENROUTER_MODEL from the environment or from a .env file in the repository root (see .env.example). Do NOT commit your real .env — .gitignore ignores it.
+
+Quick steps (Windows PowerShell):
+
+1. Create a .env file in the repo root or set environment variables instead:
+   - .env content: OPENROUTER_API_KEY=sk-...\nOPENROUTER_MODEL=gpt-4o-mini
+2. From the repo root run (temporary env):
+   $env:OPENROUTER_API_KEY='sk-...'; $env:OPENROUTER_MODEL='gpt-4o-mini'; powershell -File .\\scripts\\openrouter.ps1 -Prompt "Hello"
+3. Or run using the .env file (script auto-loads .env) from repo root:
+   powershell -File .\\scripts\\openrouter.ps1 -Prompt "Hello"
+
+The script sends one request to OpenRouter and prints a JSON excerpt of the response. Keep your API key private and never paste it into chat.
+
