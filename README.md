@@ -1,6 +1,6 @@
 # Vision-Guided Robotic Arm
 
-Lengan robot 4-DOF yang menggunakan webcam dan OpenCV untuk mendeteksi objek hitam dan putih di atas meja, menentukan posisinya dalam koordinat dunia nyata, lalu mengambil dan memindahkan objek ke zona drop berdasarkan warnanya — **sepenuhnya otomatis**.
+Lengan robot 3-DOF yang menggunakan webcam dan OpenCV untuk mendeteksi objek hitam dan putih di atas meja, menentukan posisinya dalam koordinat dunia nyata, lalu mengambil dan memindahkan objek ke zona drop berdasarkan warnanya — **sepenuhnya otomatis**.
 
 Computer vision di Python (OpenCV), kinematika dan kontrol motor di Arduino Uno.
 
