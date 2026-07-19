@@ -29,7 +29,7 @@ Computer vision di Python (OpenCV), kinematika dan kontrol motor di Arduino Uno.
 | Servo ×4 | SG90 180° positional (base, shoulder, elbow, gripper) |
 | Kamera | Webcam USB, fixed mount ~top-down |
 | Rangka | 3-DOF: base→shoulder ±8cm, shoulder→elbow ±6cm, elbow→gripper ±4cm |
-| Power | ⚠️ Servo masih dari Arduino — perlu external 5V supply untuk produksi |
+| Power | Menggunakan external 6V (4x Baterai AA) |
 
 ---
 
